@@ -1,0 +1,10 @@
+--- tim.c	2016-05-13 01:20:50.930132000 -0400
++++ tim.new.c	2016-05-13 01:01:52.354720100 -0400
+@@ -70,6 +70,7 @@
+   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+   HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig);
+ 
++  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+   sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+   sBreakDeadTimeConfig.DeadTime = 0;
