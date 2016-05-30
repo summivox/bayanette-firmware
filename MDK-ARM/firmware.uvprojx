@@ -527,66 +527,6 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>ChibiOS/nil</GroupName>
-          <Files>
-            <File>
-              <FileName>ch.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\ChibiOS-port\ch.c</FilePath>
-            </File>
-            <File>
-              <FileName>ch.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\ChibiOS-port\ch.h</FilePath>
-            </File>
-            <File>
-              <FileName>chcore.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\ChibiOS-port\chcore.c</FilePath>
-            </File>
-            <File>
-              <FileName>chcore.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\ChibiOS-port\chcore.h</FilePath>
-            </File>
-            <File>
-              <FileName>chcore_timer.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\ChibiOS-port\chcore_timer.h</FilePath>
-            </File>
-            <File>
-              <FileName>chcore_v7m.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\ChibiOS-port\chcore_v7m.c</FilePath>
-            </File>
-            <File>
-              <FileName>chcore_v7m.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\ChibiOS-port\chcore_v7m.h</FilePath>
-            </File>
-            <File>
-              <FileName>chcoreasm_v7m.s</FileName>
-              <FileType>2</FileType>
-              <FilePath>..\ChibiOS-port\chcoreasm_v7m.s</FilePath>
-            </File>
-            <File>
-              <FileName>chtypes.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\ChibiOS-port\chtypes.h</FilePath>
-            </File>
-            <File>
-              <FileName>mpu.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\ChibiOS-port\mpu.h</FilePath>
-            </File>
-            <File>
-              <FileName>chconf.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\ChibiOS-port\chconf.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
         <Group>
