@@ -8,10 +8,6 @@
 
 #include "bitband.h"
 
-// DMA handles not directly exposed by HAL
-extern DMA_HandleTypeDef SCAN_HDMA_UP;
-extern DMA_HandleTypeDef SCAN_HDMA_CC;
-
 
 ////////////////////////////////////////
 // raw scanning
@@ -163,11 +159,17 @@ void scan_init() {
 }
 
 void scan_start() {
+    // DMA handles not directly exposed by HAL
+    extern DMA_HandleTypeDef SCAN_HDMA_UP;
+    extern DMA_HandleTypeDef SCAN_HDMA_CC;
+
+    // setup DMA using STM32 HAL API
     SCAN_HDMA_CC.XferHalfCpltCallback = scan_half_cb;
     SCAN_HDMA_CC.XferCpltCallback = scan_full_cb;
     HAL_DMA_Start   (&SCAN_HDMA_UP, (uint32_t)scan_out_raw, (uint32_t)&(SCAN_ROW_GPIO->BSRR), SCAN_N_ROW);
     HAL_DMA_Start_IT(&SCAN_HDMA_CC, (uint32_t)&(SCAN_COL_GPIO->IDR),   (uint32_t)scan_in_raw, SCAN_N_ROW*2);
 
+    // setup TIM directly with registers (easier than HAL actually)
     SCAN_TIM->PSC = SystemCoreClock/1e6 - 1; // 1us tick
     SCAN_TIM->ARR = SCAN_ROW_PERIOD_Tus - 1;
     SCAN_TIM->CCR4 = SCAN_READ_DELAY_Tus;
