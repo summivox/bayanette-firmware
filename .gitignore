@@ -1,4 +1,4 @@
 MDK-ARM/*
-!MDK-ARM/*.uvproj
-!MDK-ARM/*.uvopt
+!MDK-ARM/*.uvproj*
+!MDK-ARM/*.uvopt*
 readme.html
