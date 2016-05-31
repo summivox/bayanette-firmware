@@ -4,60 +4,85 @@
 #include "usart.h"
 #include "gpio.h"
 
+#include "cmsis_os.h"
+
 #include <string.h>
 
 #include "scan.hpp"
+#include "mapping.hpp"
+
 
 ////////////////////////////////////////
-// Main
+// UART
 
 static const size_t N_BUF = 100;
 static char buf[N_BUF];
 static void send_1(unsigned char c) {
     HAL_UART_Transmit(&huart3, &c, 1, HAL_MAX_DELAY);
 }
-static void send_n() {
+static void send_len() {
     HAL_UART_Transmit(&huart3, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
 }
-
-bool notified = false;
-uint8_t ri, ci, state;
-static void notify(uint8_t ri_, uint8_t ci_, uint8_t state_) {
-    notified = true;
-    ri = ri_; ci = ci_; state = state_;
+static void send_n(size_t n) {
+    HAL_UART_Transmit(&huart3, (uint8_t*)buf, n, HAL_MAX_DELAY);
 }
+
+
+////////////////////////////////////////
+// key event queue
+
+struct KeyEvent {
+    uint8_t ri, ci, state;
+};
+osMailQDef(key_events, 8, KeyEvent);
+osMailQId key_events;
+
+static void key_event_init() {
+    osMailCreate(osMailQ(key_events), NULL);
+}
+
+// NOTE: callback from ISR -- cannot wait
+static void key_event_handler(uint8_t ri_, uint8_t ci_, uint8_t state_) {
+    KeyEvent* e = (KeyEvent*)osMailAlloc(key_events, 0);
+    if (!e) return;
+    e->ri = ri_;
+    e->ci = ci_;
+    e->state = state_;
+    osMailPut(key_events, e);
+}
+
+
+////////////////////////////////////////
+// main thread
 
 extern "C" void user_main() {
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
-    strncpy(buf, "\r\n" "bayan-test" "\r\n", N_BUF);
-    send_n();
     
+    osKernelInitialize();
+    osKernelStart();
+    
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
+    
+    key_event_init();
     scan_init();
-    scan_callback = notify;
+    scan_callback = key_event_handler;
     scan_start();
+    
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
 
-#if 0
-    // transfer data
     while (1) {
-        HAL_Delay(250);
-        for (size_t ri = 0 ; ri < SCAN_N_ROW ; ++ri) {
-            uint16_t row = scan_state[ri];
-            for (size_t ci = 0 ; ci < SCAN_N_COL ; ++ci) {
-                send_1(((row >> ci) & 1) ? '1' : '0');
-            }
-            strncpy(buf, "\r\n", N_BUF);
-            send_n();
-        }
-        strncpy(buf, "\r\n" "----------" "\r\n", N_BUF);
-        send_n();
-    }
-#endif
-    size_t counter = 0;
-    while (1) {
-        if (notified) {
-            notified = false;
-            sprintf(buf, "%05d: %c%d%d\r\n", counter++, state ? '+' : '-', ri, ci); // assume single digit
-            send_n();
+        osEvent ose = osMailGet(key_events, osWaitForever);
+        if (ose.status == osEventMail) {
+            KeyEvent* e = (KeyEvent*)ose.value.p;
+            
+            // NOTE: MIDI handling is hardcoded for now
+            buf[0] = (e->state ? 0x90 : 0x80); // use ch0
+            buf[1] = mapping[e->ri][e->ci];
+            buf[2] = 100; // use hard-coded velocity
+            
+            osMailFree(key_events, e);
+            
+            send_n(3); // blocking call
         }
     }
 }

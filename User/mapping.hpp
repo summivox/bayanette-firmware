@@ -4,4 +4,4 @@
 
 #include "scan_conf.hpp"
 
-extern uint8_t mapping[N_ROW][N_COL];
+extern uint8_t mapping[SCAN_N_ROW][SCAN_N_COL];
