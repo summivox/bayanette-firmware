@@ -38,7 +38,7 @@ osMailQDef(key_events, 8, KeyEvent);
 osMailQId key_events;
 
 static void key_event_init() {
-    osMailCreate(osMailQ(key_events), NULL);
+    key_events = osMailCreate(osMailQ(key_events), NULL);
 }
 
 // NOTE: callback from ISR -- cannot wait
