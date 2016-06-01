@@ -14,7 +14,7 @@ static const uint8_t SCAN_N_COL = 10;
 #define SCAN_ROW_GPIO GPIOC
 #define SCAN_COL_GPIO GPIOA
 static const uint32_t SCAN_ROW_PINS[SCAN_N_ROW] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-static const uint32_t SCAN_COL_PINS[SCAN_N_COL] = {3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+static const uint32_t SCAN_COL_PINS[SCAN_N_COL] = {1, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 
 // TIM and associated DMA
 // NOTE: TIM must have update and output compare DMA request lines mapped to
