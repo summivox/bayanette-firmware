@@ -7,6 +7,7 @@
 #include "tim.h"
 
 #include "bitband.h"
+#include "debouncer.hpp"
 
 
 ////////////////////////////////////////
@@ -24,9 +25,6 @@ static uint32_t scan_out_raw[SCAN_N_ROW];
 // NOTE: 32-bit for DMA transfer; ordered by GPIO pin#, not col#
 static volatile uint32_t scan_in_raw[2][SCAN_N_ROW];
 
-// scan_in: same format as `scan_state`; not debounced
-static uint16_t scan_in[SCAN_N_ROW];
-
 // populate scan_out_raw
 static void scan_out_init() {
     // BSRR[31:16]: a `1` sets corresponding pin to low
@@ -42,106 +40,40 @@ static void scan_out_init() {
     }
 }
 
-// extract last full-field snapshot in `scan_in_raw` to `scan_in`
-// half: which half of double buffer to copy from
-static void scan_dump(uint8_t half) {
-    volatile uint32_t* a = scan_in_raw[half];
+
+////////////////////////////////////////
+// debouncing
+
+static Debouncer<
+    scan_debounce_counter_t,
+    SCAN_BOUNCE_THRES_TRANSIENT_n,
+    SCAN_BOUNCE_THRES_STEADY_n> debouncer[SCAN_N_ROW][SCAN_N_COL];
+
+// run debouncing algorithm using last full-field snapshot in `scan_in_raw`
+// half: which half of double buffer to process
+static void scan_debounce_field(uint8_t half) {
+    volatile uint32_t* scan_in = scan_in_raw[half];
     for (size_t ri = 0 ; ri < SCAN_N_ROW ; ++ri) {
-        uint32_t raw_row = a[ri];
-        uint16_t row = 0;
+        uint32_t raw_row = scan_in[ri];
         for (size_t ci = 0 ; ci < SCAN_N_COL ; ++ci) {
-            row |= ((raw_row >> SCAN_COL_PINS[ci]) & 1) << ci;
+            bool input = (raw_row >> SCAN_COL_PINS[ci]) & 1;
+            bool changed = debouncer[ri][ci].update(input);
+            if (changed) {
+                bool output = debouncer[ri][ci].output();
+                // atomically write state bit using Cortex-M bit-band alias
+                SBIT_RAM(scan_state + ri, ci) = output;
+                // callback might not be registered
+                if (scan_callback) scan_callback(ri, ci, output);
+            }
         }
-        scan_in[ri] = row;
     }
 }
 
 
 ////////////////////////////////////////
-// debouncing
+// interface with HAL
 
-// discrete integrator for each key
-static scan_counter_t counter[SCAN_N_ROW][SCAN_N_COL];
-
-// finite state machine for each key
-// | # | state              | out |
-// |---|--------------------|-----|
-// | 0 | stable lo          | lo  |
-// | 1 | lo -> hi transient | hi  |
-// | 2 | stable hi          | hi  |
-// | 3 | hi -> lo transient | lo  |
-//
-// NOTE: not to be confused with `scan_state`
-static uint8_t state[SCAN_N_ROW][SCAN_N_COL];
-
-static void scan_debounce_init() {
-    memset(counter, 0, sizeof(counter));
-    memset(state, 0, sizeof(state));
-}
-
-static inline void output(uint8_t ri, uint8_t ci, uint8_t state) {
-    SBIT_RAM(scan_state + ri, ci) = state; // change bit using Cortex-M bit-band alias
-    if (scan_callback) scan_callback(ri, ci, state);
-}
-
-static void scan_debounce_field(uint8_t half) {
-    scan_dump(half);
-    for (size_t ri = 0 ; ri < SCAN_N_ROW ; ++ri) {
-        uint16_t row = scan_in[ri];
-        // NOTE: symmetric increment for simple impl
-        for (size_t ci = 0 ; ci < SCAN_N_COL ; ++ci) {
-            scan_counter_t c = counter[ri][ci];
-            if ((row >> ci) & 1) {
-                // input is high => increment counter
-                if (c < SCAN_BOUNCE_MAX_n) ++c;
-                else continue;
-            } else {
-                // input is low  => decrement counter
-                if (c > 0) --c;
-                else continue;
-            }
-            counter[ri][ci] = c;
-
-            switch (state[ri][ci]) {
-            case 0: // stable low
-                if (c >= SCAN_BOUNCE_THRES_HI_n) {
-                    state[ri][ci] = 1;
-                    output(ri, ci, 1);
-                }
-                break;
-            case 1: // low -> high transient
-                if (c < SCAN_BOUNCE_THRES_LO_n) {
-                    state[ri][ci] = 0;
-                    output(ri, ci, 0);
-                }
-                if (c == SCAN_BOUNCE_MAX_n) {
-                    state[ri][ci] = 2;
-                }
-                break;
-            case 2: // stable high
-                if (c <= SCAN_BOUNCE_MAX_n - SCAN_BOUNCE_THRES_HI_n) {
-                    state[ri][ci] = 3;
-                    output(ri, ci, 0);
-                }
-                break;
-            case 3: // high -> low transient
-                if (c > SCAN_BOUNCE_MAX_n - SCAN_BOUNCE_THRES_LO_n) {
-                    state[ri][ci] = 2;
-                    output(ri, ci, 1);
-                }
-                if (c == 0) {
-                    state[ri][ci] = 0;
-                }
-                break;
-            default:
-                // TODO: panic!
-                break;
-            }
-        }
-    }
-}
-
-// HAL interrupt callback
+// interrupt callback
 static void scan_half_cb(DMA_HandleTypeDef* hdma) { scan_debounce_field(0); }
 static void scan_full_cb(DMA_HandleTypeDef* hdma) { scan_debounce_field(1); }
 
@@ -155,9 +87,9 @@ extern scan_callback_t scan_callback = nullptr;
 
 void scan_init() {
     scan_out_init();
-    scan_debounce_init();
 }
 
+// setup scanning capture
 void scan_start() {
     // DMA handles not directly exposed by HAL
     extern DMA_HandleTypeDef SCAN_HDMA_UP;
@@ -170,7 +102,7 @@ void scan_start() {
     HAL_DMA_Start_IT(&SCAN_HDMA_CC, (uint32_t)&(SCAN_COL_GPIO->IDR),   (uint32_t)scan_in_raw, SCAN_N_ROW*2);
 
     // setup TIM directly with registers (easier than HAL actually)
-    SCAN_TIM->PSC = SystemCoreClock/1e6 - 1; // 1us tick
+    SCAN_TIM->PSC = SystemCoreClock/1e6 - 1; // 1us tick (assuming timer clock freq same as CPU)
     SCAN_TIM->ARR = SCAN_ROW_PERIOD_Tus - 1;
     SCAN_TIM->CCR4 = SCAN_READ_DELAY_Tus;
     SCAN_TIM->CCER = TIM_CCER_CC4E; // enable output compare

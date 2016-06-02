@@ -1,11 +1,10 @@
 #pragma once
 
 #include <stdint.h>
-#include <limits>
 
 
 ////////////////////////////////////////
-// hardware mapping
+// hardware resources (peripherals) to use
 
 // GPIO
 // NOTE: all row pins must be in the same port (max 16 pins); col pins ditto
@@ -18,7 +17,7 @@ static const uint32_t SCAN_COL_PINS[SCAN_N_COL] = {1, 4, 5, 6, 7, 8, 9, 10, 11, 
 
 // TIM and associated DMA
 // NOTE: TIM must have update and output compare DMA request lines mapped to
-// different channels (e.g. TIM1 on STM32F10x)
+// different channels (e.g. TIM1 on STM32F0/1/3)
 #define SCAN_TIM TIM1
 #define SCAN_HDMA_UP hdma_tim1_up
 #define SCAN_HDMA_CC hdma_tim1_ch4_trig_com
@@ -34,19 +33,11 @@ static const uint16_t SCAN_READ_DELAY_Tus = 16; // time from writing a row to re
 static const uint16_t SCAN_FIELD_PERIOD_Tus = SCAN_ROW_PERIOD_Tus * SCAN_N_ROW; // total time to complete a scan cycle
 
 // debouncing
-// NOTE:
-// - times specified here are effectively rounded to integer multiples of `SCAN_FIELD_PERIOD_Tus`
-// - relationship between times: lo < hi < max
-// - debouncing counter type must be unsigned and able to store `SCAN_BOUNCE_MAX_n`
-static const uint32_t SCAN_BOUNCE_MAX_Tus = 6000;
-static const uint32_t SCAN_BOUNCE_THRES_HI_Tus = 800;
-static const uint32_t SCAN_BOUNCE_THRES_LO_Tus = 400;
-typedef uint8_t scan_counter_t;
+static const uint32_t SCAN_BOUNCE_THRES_STEADY_Tus = 6000;
+static const uint32_t SCAN_BOUNCE_THRES_TRANSIENT_Tus = 600;
+typedef int8_t scan_debounce_counter_t;
 // derived
-static const uint32_t SCAN_BOUNCE_MAX_n = SCAN_BOUNCE_MAX_Tus/SCAN_FIELD_PERIOD_Tus;
-static const uint32_t SCAN_BOUNCE_THRES_HI_n = SCAN_BOUNCE_THRES_HI_Tus/SCAN_FIELD_PERIOD_Tus;
-static const uint32_t SCAN_BOUNCE_THRES_LO_n = SCAN_BOUNCE_THRES_LO_Tus/SCAN_FIELD_PERIOD_Tus;
-static_assert(SCAN_BOUNCE_THRES_LO_n < SCAN_BOUNCE_THRES_HI_n, "lo < hi");
-static_assert(SCAN_BOUNCE_THRES_HI_n < SCAN_BOUNCE_MAX_n, "hi < max");
-static const scan_counter_t scan_counter_max = ~(scan_counter_t)0;
-static_assert(SCAN_BOUNCE_MAX_n <= scan_counter_max, "max <= counter type max");
+#define CEIL_DIV(a, b) (((a) + (b) - 1) / (b))
+static const uint32_t SCAN_BOUNCE_THRES_STEADY_n = CEIL_DIV(SCAN_BOUNCE_THRES_STEADY_Tus, SCAN_FIELD_PERIOD_Tus);
+static const uint32_t SCAN_BOUNCE_THRES_TRANSIENT_n = CEIL_DIV(SCAN_BOUNCE_THRES_TRANSIENT_Tus, SCAN_FIELD_PERIOD_Tus);
+#undef CEIL_DIV
