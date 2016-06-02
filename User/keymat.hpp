@@ -1,16 +1,24 @@
 #pragma once
-#include "scan_conf.hpp"
+#include "keymat_conf.hpp"
 
 #include <stdint.h>
 
-// scan_state: array of bit vectors; each bit is the current sampled state of a key
+// keymat_state: array of bit vectors; each bit is the current sampled state of a key
 // row#: array index
 // col#: bit index
-extern volatile uint16_t scan_state[SCAN_N_ROW];
+extern volatile uint16_t keymat_state[KEYMAT_ROW_n];
+
+// convenience function for checking the status of a single key
+static bool keymat_state_get(uint8_t ri, uint8_t ci) {
+    return (keymat_state[ri] >> ci) & 1;
+}
 
 // event callback: notify that a key has changed state
-typedef void (*scan_callback_t)(uint8_t ri, uint8_t ci, uint8_t state);
-extern scan_callback_t scan_callback;
+// NOTE: called indirectly from ISR
+typedef void (*keymat_callback_t)(uint8_t ri, uint8_t ci, bool state);
+extern keymat_callback_t keymat_callback;
 
-void scan_init(void);
-void scan_start(void);
+// actions
+void keymat_init(void);
+void keymat_start(void);
+void keymat_stop(void);
