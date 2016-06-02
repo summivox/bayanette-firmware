@@ -8,7 +8,7 @@
 
 template <typename T, T thres_transient, T thres_steady>
 struct Debouncer {
-    
+
 #ifdef DEBOUNCER_CHECK_TYPE
     static_assert(std::is_signed<T>::value, "");
 #endif // DEBOUNCER_CHECK_TYPE
