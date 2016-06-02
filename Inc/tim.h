@@ -39,19 +39,21 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f1xx_hal.h"
+#include "stm32f0xx_hal.h"
 
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
 
 extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim3;
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
 void MX_TIM1_Init(void);
+void MX_TIM3_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
