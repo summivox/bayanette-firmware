@@ -1,4 +1,3 @@
-#include "stm32f1xx_hal.h"
 #include "dma.h"
 #include "tim.h"
 #include "usart.h"
@@ -15,16 +14,18 @@
 ////////////////////////////////////////
 // UART
 
+#define HUART huart1
+
 static const size_t N_BUF = 100;
 static char buf[N_BUF];
 static void send_1(unsigned char c) {
-    HAL_UART_Transmit(&huart3, &c, 1, HAL_MAX_DELAY);
+    HAL_UART_Transmit(&HUART, &c, 1, HAL_MAX_DELAY);
 }
 static void send_len() {
-    HAL_UART_Transmit(&huart3, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+    HAL_UART_Transmit(&HUART, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
 }
 static void send_n(size_t n) {
-    HAL_UART_Transmit(&huart3, (uint8_t*)buf, n, HAL_MAX_DELAY);
+    HAL_UART_Transmit(&HUART, (uint8_t*)buf, n, HAL_MAX_DELAY);
 }
 
 

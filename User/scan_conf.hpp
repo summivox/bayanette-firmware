@@ -11,16 +11,16 @@
 // NOTE: all row pins must be in the same port (max 16 pins); col pins ditto
 static const uint8_t SCAN_N_ROW = 10;
 static const uint8_t SCAN_N_COL = 10;
-#define SCAN_ROW_GPIO GPIOC
+#define SCAN_ROW_GPIO GPIOB
 #define SCAN_COL_GPIO GPIOA
-static const uint32_t SCAN_ROW_PINS[SCAN_N_ROW] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-static const uint32_t SCAN_COL_PINS[SCAN_N_COL] = {1, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+static const uint32_t SCAN_ROW_PINS[SCAN_N_ROW] = {0, 1, 2, 10, 11, 12, 3, 7, 8, 9};
+static const uint32_t SCAN_COL_PINS[SCAN_N_COL] = {4, 5, 6, 7, 8, 9, 10, 11, 12, 15};
 
 // TIM and associated DMA
 // NOTE: TIM must have update and output compare DMA request lines mapped to
 // different channels (e.g. TIM1 on STM32F10x)
 #define SCAN_TIM TIM1
-#define SCAN_HDMA_UP hdma_tim1_up
+#define SCAN_HDMA_UP hdma_tim1_ch3_up
 #define SCAN_HDMA_CC hdma_tim1_ch4_trig_com
 
 
