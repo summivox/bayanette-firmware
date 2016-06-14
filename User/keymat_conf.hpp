@@ -18,10 +18,10 @@ static_assert(1 <= KEYMAT_COL_n && KEYMAT_COL_n <= 16, "");
 
 // GPIO
 // NOTE: all row pins must be in the same port (max 16 pins); col pins ditto
-#define KEYMAT_ROW_GPIO GPIOC
-#define KEYMAT_COL_GPIO GPIOA
-static const uint8_t KEYMAT_ROW_PINS[KEYMAT_ROW_n] = {0, 1, 2, 10, 11, 12, 3, 7, 8, 9};
-static const uint8_t KEYMAT_COL_PINS[KEYMAT_COL_n] = {4, 5, 6, 7, 8, 9, 10, 11, 12, 15};
+#define KEYMAT_ROW_GPIO GPIOA
+#define KEYMAT_COL_GPIO GPIOB
+static const uint8_t KEYMAT_ROW_PINS[KEYMAT_ROW_n] = {4, 5, 6, 7, 8, 9, 10, 11, 12, 15};
+static const uint8_t KEYMAT_COL_PINS[KEYMAT_COL_n] = {0, 1, 2, 10, 11, 12, 15, 7, 8, 9}; // FIXME: col[6] should be 3; temporary work around bad IO pin
 
 // TIM and associated DMA
 // NOTE: TIM must have update and output compare DMA request lines mapped to
@@ -35,8 +35,8 @@ static const uint8_t KEYMAT_COL_PINS[KEYMAT_COL_n] = {4, 5, 6, 7, 8, 9, 10, 11, 
 // timing
 
 // raw scanning
-static const uint16_t KEYMAT_ROW_PERIOD_Tus = 20; // duration of a row being active within a scan cycle
-static const uint16_t KEYMAT_READ_DELAY_Tus = 19; // time from writing a row to reading columns in that row
+static const uint16_t KEYMAT_ROW_PERIOD_Tus = 30; // duration of a row being active within a scan cycle
+static const uint16_t KEYMAT_READ_DELAY_Tus = 20; // time from writing a row to reading columns in that row
 // derived
 static const uint16_t KEYMAT_FIELD_PERIOD_Tus = KEYMAT_ROW_PERIOD_Tus * KEYMAT_ROW_n; // total time to complete a scan cycle
 

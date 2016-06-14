@@ -64,8 +64,11 @@ static void keymat_debounce_field(uint8_t half) {
             bool changed = debouncer[ri][ci].update(input);
             if (changed) {
                 bool output = debouncer[ri][ci].output();
-                // atomically write state bit using Cortex-M bit-band alias
-                SBIT_RAM(keymat_state + ri, ci) = output;
+                if (output) {
+                    keymat_state[ri] |= 1 << ci;
+                } else {
+                    keymat_state[ri] &= ~(1 << ci);
+                }
                 // callback might not be registered
                 if (keymat_callback) keymat_callback(ri, ci, output);
             }

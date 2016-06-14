@@ -73,19 +73,13 @@ static void key_event_handler(uint8_t ri, uint8_t ci, bool state) {
 // main thread
 
 extern "C" void user_main() {
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
-
     osKernelInitialize();
     osKernelStart();
-
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
-
+    
     key_event_init();
     keymat_init();
     keymat_callback = key_event_handler;
     keymat_start();
-
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
 
     while (1) {
         osEvent ose = osMailGet(key_events, osWaitForever);

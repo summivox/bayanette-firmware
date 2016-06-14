@@ -38,6 +38,8 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define Temp_PB3_Pin GPIO_PIN_15
+#define Temp_PB3_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
